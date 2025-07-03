@@ -1,0 +1,44 @@
+variables:
+  AIRFLOW_DIR: /opt/airflow/
+  AIRFLOW_DEV_CON: airflow-dev-apiserver
+  LOCAL_DIR: local
+  DEV_FOLDER: dev
+  PROD_FOLDER: prod
+
+stages:
+  - staging
+  - dev
+  - prod
+
+linter:
+  stage: staging
+  image: python:3.9-slim-buster 
+  before_script:
+    - pip install flake8
+  script:
+    - echo "Python Linter check..."
+    - flake8 ${AIRFLOW_DIR}
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" 
+
+deploy_to_dev:
+  stage: dev
+  image: docker:latest 
+  script:
+    - echo "Deploying to DEV cluster..."
+    - docker cp ./${LOCAL_DIR}/dags/ ${AIRFLOW_DEV_CON}:${AIRFLOW_DIR}
+    - docker cp ./${LOCAL_DIR}/plugins/ ${AIRFLOW_DEV_CON}:${AIRFLOW_DIR}
+  rules:
+    - if: $CI_COMMIT_BRANCH == "dev"
+      when: on_success
+
+deploy_to_prod:
+  stage: prod
+  image: alpine:latest
+  script:
+    - echo "Deploying to PROD cluster..."
+    - docker cp ./${LOCAL_DIR}/dags/ ${AIRFLOW_DEV_CON}:${AIRFLOW_DIR}
+    - docker cp ./${LOCAL_DIR}/plugins/ ${AIRFLOW_DEV_CON}:${AIRFLOW_DIR}
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: on_success

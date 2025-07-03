@@ -1,0 +1,8 @@
+gitlab_config/
+gitlab_data/
+gitlab_logs/
+
+airflow/*/config/
+airflow/*/logs/
+
+/.env
